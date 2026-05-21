@@ -1,8 +1,4 @@
-"""Evaluation entry point for the ACDC dual-head classifier.
 
-The file already works in dummy mode, so metrics can be tested before the
-training code and checkpoints are ready.
-"""
 
 from __future__ import annotations
 
