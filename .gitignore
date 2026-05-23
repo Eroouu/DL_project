@@ -1,0 +1,33 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments and local package installs
+.venv/
+venv/
+env/
+ENV/
+.python_packages/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Test, coverage, and tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+
+# Temporary Office files
+~$*.doc*
+~$*.xls*
+~$*.ppt*
