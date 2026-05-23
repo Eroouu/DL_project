@@ -20,7 +20,7 @@ Metrics:
 
 Task: multi-label image-level object presence classification.
 
-The object class list is read from `configs/class_map.example.json` for now. When the data pipeline is finalized, this should be replaced with the team's final `class_map.json`.
+The object class list and `has_*` label columns are read from `configs/classmap.json`.
 
 Metrics:
 - mAP
@@ -47,8 +47,8 @@ Object metrics should also be reported separately for:
 
 From data pipeline:
 - `metadata_val.csv`
-- final `class_map.json`
-- fixed object label columns in the same order as `class_map.json`
+- final `configs/classmap.json`
+- fixed `has_*` object label columns in the same order as `configs/classmap.json`
 
 From model pipeline:
 - checkpoint, or prediction file

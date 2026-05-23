@@ -32,7 +32,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Evaluate ACDC dual-head classifier outputs.")
     parser.add_argument("--metadata", type=Path, help="CSV with image paths and ground-truth labels.")
     parser.add_argument("--predictions", type=Path, help="NPZ with weather_logits/object_logits or probabilities.")
-    parser.add_argument("--class-map", type=Path, default=Path("configs/class_map.example.json"))
+    parser.add_argument("--class-map", type=Path, default=Path("configs/classmap.json"))
     parser.add_argument("--out", type=Path, default=Path("reports/metrics/dummy_eval.json"))
     parser.add_argument("--dummy", action="store_true", help="Generate random predictions for pipeline testing.")
     parser.add_argument("--tune-thresholds", action="store_true", help="Tune per-class object thresholds on this split.")
@@ -46,12 +46,14 @@ def main() -> None:
     class_map = load_class_map(args.class_map)
     weather_classes = class_map["weather_classes"]
     object_classes = class_map["object_classes"]
+    object_columns = class_map.get("object_columns", object_classes)
 
     rng = np.random.default_rng(args.seed)
     weather_true, object_true = load_ground_truth(
         metadata_path=args.metadata,
         weather_classes=weather_classes,
         object_classes=object_classes,
+        object_columns=object_columns,
         num_samples=args.num_samples,
         rng=rng,
     )
@@ -122,6 +124,7 @@ def load_class_map(path: Path) -> dict[str, list[str]]:
     return {
         "weather_classes": raw.get("weather_classes", DEFAULT_WEATHER_CLASSES),
         "object_classes": object_classes,
+        "object_columns": raw.get("object_columns", object_classes),
     }
 
 
@@ -129,6 +132,7 @@ def load_ground_truth(
     metadata_path: Path | None,
     weather_classes: list[str],
     object_classes: list[str],
+    object_columns: list[str],
     num_samples: int,
     rng: np.random.Generator,
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -143,7 +147,7 @@ def load_ground_truth(
         dtype=int,
     )
     object_true = np.array(
-        [[int(row[class_name]) for class_name in object_classes] for row in rows],
+        [[int(row[column_name]) for column_name in object_columns] for row in rows],
         dtype=int,
     )
     return weather_true, object_true
