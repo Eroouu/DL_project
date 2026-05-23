@@ -20,6 +20,13 @@ ENV/
 .coverage
 htmlcov/
 
+# Generated project outputs
+artifacts/
+reports/metrics/*.json
+reports/metrics/*.summary.md
+reports/metrics/*.per_class.csv
+reports/metrics/*.per_weather.csv
+
 # OS and editor files
 .DS_Store
 Thumbs.db
