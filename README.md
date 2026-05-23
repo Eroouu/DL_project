@@ -1,52 +1,104 @@
-# ACDC Dual-Head Training
+# ACDC Dual-Head Classification Project
 
-This repository contains the original Kaggle notebook and a script-based training path for the ACDC image-level dual-head classifier.
+Image-level classification project on ACDC adverse-weather driving scenes.
 
-Egor's part covers the training infrastructure: datasets, MambaVision dual-head model, configs, and a simple checkpoint-producing `train.py`.
+The repository now contains three script-based parts:
+
+- data preparation and standardized metadata generation;
+- dual-head MambaVision training;
+- evaluation metrics for weather and object heads.
 
 ## Environment
 
-Use the existing local environment:
+With `uv`:
+
+```bash
+uv sync
+```
+
+On Egor's local machine, the existing Conda environment can also install the training requirements:
 
 ```powershell
 C:\Users\egor0\anaconda3\envs\diplom314\python.exe -m pip install -r requirements.txt
 ```
 
-On this machine, `diplom314` already has the needed training packages installed.
-
 ## Project Structure
 
 ```text
-src/
-  data/datasets.py              CSV-backed ACDC datasets and transforms
-  models/mamba_dual_head.py     MambaVision backbone + weather/object heads
-  utils/                        config and checkpoint helpers
-scripts/
-  train.py                      simple training entrypoint
 configs/
-  mamba_t_smoke.yaml            short MambaVision-T run on a small subset
-  mamba_s_smoke.yaml            short MambaVision-S architecture check
-  mamba_t_full.yaml             first longer MambaVision-T config
+  classmap.json                fixed weather/object mapping and CSV label columns
+  mamba_t_smoke.yaml           short MambaVision-T run on a small subset
+  mamba_s_smoke.yaml           short MambaVision-S architecture check
+  mamba_t_full.yaml            first longer MambaVision-T config
+reports/
+  data.md                      data layout, split logic, CSV contract, build command
+  evaluation_plan.md           evaluation plan and expected inputs
+scripts/
+  train.py                     training entrypoint
+src/
+  data/datasets.py             CSV-backed ACDC datasets and transforms
+  dataset_builder.py           ACDC metadata builder and reusable dataset helpers
+  eval.py                      evaluation entrypoint
+  metrics.py                   pure metric functions
+  models/mamba_dual_head.py    MambaVision backbone + weather/object heads
+  prepare_acdc.py              one-step ZIP extraction + metadata build
+  utils/                       config and checkpoint helpers
 ```
 
-## Expected Metadata
+## Data Preparation
 
-Run the notebook preprocessing cells first. Training reads ready CSV files from `metadata_dir`:
+Put the downloaded ACDC archives into the project root:
 
 ```text
-head2_presence_train.csv
-head2_presence_val.csv
+gt_trainval.zip
+rgb_anon_trainvaltest.zip
 ```
 
-Each CSV must contain:
+Then prepare the project dataset layout and metadata in one step:
 
-- `image_path`
-- either `weather_id` or `weather` / `weather_label`
-- object columns with the `has_` prefix, for example `has_road`, `has_car`, `has_sky`
+```bash
+uv run python -m src.prepare_acdc \
+  --gt-zip gt_trainval.zip \
+  --rgb-zip rgb_anon_trainvaltest.zip \
+  --data-root data/acdc \
+  --metadata-dir metadata \
+  --prefix metadata
+```
+
+The script extracts only labeled `train`/`val` RGB images and `gt_labelTrainIds` masks, then creates:
+
+```text
+data/acdc/gt_trainval/gt/...
+data/acdc/rgb_anon_trainvaltest/rgb_anon/...
+metadata/metadata_train.csv
+metadata/metadata_val.csv
+metadata/metadata_test.csv
+metadata/metadata_all.csv
+```
+
+For quick notebook smoke runs:
+
+```bash
+uv run python -m src.prepare_acdc \
+  --quick-limit-per-split 32 \
+  --metadata-dir metadata_quick
+```
+
+If the files are already unpacked, rebuild only standardized metadata:
+
+```bash
+uv run python -m src.dataset_builder \
+  --data-root data/acdc \
+  --classmap configs/classmap.json \
+  --out-dir metadata \
+  --prefix metadata
+```
+
+The CSV contract is fixed in `reports/data.md`. Core columns are `image_path`, `weather_label`, `weather_id`, `official_split`, `split`, `sequence`, `frame`, `mask_path`, and object columns such as `has_road`, `has_car`, `has_bicycle`.
 
 ## Train
 
-Kaggle smoke run after metadata is created:
+Smoke run after metadata is created:
 
 ```bash
 python scripts/train.py --config configs/mamba_t_smoke.yaml
@@ -68,7 +120,7 @@ Direct CLI overrides:
 
 ```bash
 python scripts/train.py \
-  --metadata-dir /kaggle/working/metadata \
+  --metadata-dir metadata \
   --model mamba_t \
   --batch-size 8 \
   --lr 0.001 \
@@ -98,16 +150,43 @@ On Kaggle configs they are written to `/kaggle/working/checkpoints/`.
 - `limit_train`, `limit_val`: optional small-subset smoke run limits
 - `output_dir`: checkpoint directory
 
+## Evaluation
+
+Dummy evaluation check:
+
+```bash
+uv run python src/eval.py --dummy --tune-thresholds --out reports/metrics/dummy_eval.json
+```
+
+Evaluation on prepared validation metadata with dummy predictions:
+
+```bash
+uv run python src/eval.py \
+  --metadata metadata/metadata_val.csv \
+  --dummy \
+  --tune-thresholds \
+  --out reports/metrics/metadata_val_dummy_eval.json
+```
+
+Expected prediction `.npz` keys for real model outputs:
+
+```text
+weather_logits: N x 4
+object_logits: N x C
+```
+
+or:
+
+```text
+weather_prob: N x 4
+object_prob: N x C
+```
+
 ## Implemented Scope
 
+- `src.prepare_acdc` extracts the ACDC ZIP files into the project layout and builds metadata.
+- `configs/classmap.json` fixes weather ids and object `has_*` columns.
 - `ACDCWeatherDataset`, `ACDCObjectPresenceDataset`, and `ACDCDualHeadDataset` read ready CSV metadata.
 - `MambaVisionDualHead` loads a shared MambaVision backbone and exposes `freeze_backbone()` / `unfreeze_backbone()`.
 - `train.py` supports config + CLI overrides, logs epoch losses to stdout, and saves epoch checkpoints.
-- Training code is cleaned into `src/`, `scripts/`, and `configs/` so the next stage can consume checkpoints directly.
-
-## Left For The Metrics/Eval Owner
-
-- Build or finish `eval.py`.
-- Produce summary `.md` and `.csv` metric tables in `reports/metrics/`.
-- Run dummy/checkpoint evaluation checks.
-- Add plots and choose the best-looking visualizations for the report.
+- `eval.py` computes weather/object metrics and writes JSON, Markdown, and CSV tables.
