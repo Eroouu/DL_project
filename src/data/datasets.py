@@ -41,7 +41,7 @@ TRAIN_ID_TO_NAME = {
     18: "bicycle",
 }
 OBJECT_LABEL_COLUMNS = [
-    f"has_{TRAIN_ID_TO_NAME[i].replace(' ', '_')}" for i in range(len(TRAIN_ID_TO_NAME))
+    f"has_{TRAIN_ID_TO_NAME[i].replace(' ', '_')}" for i in range(1, len(TRAIN_ID_TO_NAME))
 ]
 
 

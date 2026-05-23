@@ -59,13 +59,33 @@ def get_acdc_key(path: Path) -> tuple[str, str, str, str]:
     return weather, official_split, sequence, frame
 
 
-def mask_to_multihot(mask_path: Path, num_classes: int) -> np.ndarray:
+def build_train_id_to_target_index(classmap: dict[str, Any]) -> dict[int, int]:
+    train_id_to_object = {
+        int(train_id): object_name
+        for train_id, object_name in classmap.get("train_id_to_object", {}).items()
+    }
+    object_classes = list(classmap["object_classes"])
+    object_to_index = {object_name: idx for idx, object_name in enumerate(object_classes)}
+
+    if not train_id_to_object:
+        return {idx: idx for idx in range(len(object_classes))}
+
+    return {
+        train_id: object_to_index[object_name]
+        for train_id, object_name in train_id_to_object.items()
+        if object_name in object_to_index
+    }
+
+
+def mask_to_multihot(mask_path: Path, train_id_to_target_index: dict[int, int], num_targets: int) -> np.ndarray:
     mask = np.array(Image.open(mask_path))
     class_ids = np.unique(mask)
-    class_ids = class_ids[(0 <= class_ids) & (class_ids < num_classes)]
 
-    target = np.zeros(num_classes, dtype=np.int64)
-    target[class_ids.astype(np.int64)] = 1
+    target = np.zeros(num_targets, dtype=np.int64)
+    for class_id in class_ids.astype(np.int64):
+        target_idx = train_id_to_target_index.get(int(class_id))
+        if target_idx is not None:
+            target[target_idx] = 1
     return target
 
 
@@ -77,6 +97,7 @@ def build_labeled_metadata(
     paths = resolve_acdc_paths(data_root)
     weather_to_id = classmap["weather_to_id"]
     object_columns = classmap["object_columns"]
+    train_id_to_target_index = build_train_id_to_target_index(classmap)
 
     rgb_files = sorted(paths.rgb_root.rglob("*_rgb_anon.png"))
     rgb_index = {get_acdc_key(path): path for path in rgb_files}
@@ -112,7 +133,11 @@ def build_labeled_metadata(
             if mask_path is None:
                 raise FileNotFoundError(f"Mask not found for RGB image: {rgb_path}")
             row["mask_path"] = str(mask_path)
-            target = mask_to_multihot(mask_path, num_classes=len(object_columns))
+            target = mask_to_multihot(
+                mask_path,
+                train_id_to_target_index=train_id_to_target_index,
+                num_targets=len(object_columns),
+            )
             for column, value in zip(object_columns, target, strict=True):
                 row[column] = int(value)
 

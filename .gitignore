@@ -21,15 +21,15 @@ ENV/
 htmlcov/
 
 # Generated project outputs and local data
-artifacts/
-checkpoints/
-data/
-gt_trainval/
-rgb_anon_trainvaltest/
-gt_trainval.zip
-rgb_anon_trainvaltest.zip
-metadata/
-metadata_quick/
+/artifacts/
+/checkpoints/
+/data/
+/gt_trainval/
+/rgb_anon_trainvaltest/
+/gt_trainval.zip
+/rgb_anon_trainvaltest.zip
+/metadata/
+/metadata_quick/
 reports/metrics/*.json
 reports/metrics/*.summary.md
 reports/metrics/*.per_class.csv

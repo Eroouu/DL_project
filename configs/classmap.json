@@ -28,7 +28,6 @@
     "18": "bicycle"
   },
   "object_classes": [
-    "road",
     "sidewalk",
     "building",
     "wall",
@@ -49,7 +48,6 @@
     "bicycle"
   ],
   "object_columns": [
-    "has_road",
     "has_sidewalk",
     "has_building",
     "has_wall",

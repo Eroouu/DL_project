@@ -41,7 +41,7 @@ Weather labels are fixed as:
 | rain | 2 |
 | snow | 3 |
 
-Object presence labels are generated from ACDC train ids `0..18`. Column names are `has_<class>`, for example `has_road`, `has_sidewalk`, `has_car`, and `has_bicycle`.
+Object presence labels are generated from ACDC train ids `1..18`. Train id `0` (`road`) is intentionally excluded because it is present in almost every driving image and is not useful as an image-level object-presence target. Column names are `has_<class>`, for example `has_sidewalk`, `has_car`, and `has_bicycle`.
 
 ## CSV Format
 
@@ -57,7 +57,7 @@ Generated CSV files use these common columns:
 | `frame` | Frame id parsed from the file name. |
 | `split` | Internal split: `train`, `val`, or `test`. |
 | `mask_path` | Path to `gt_labelTrainIds` mask, present unless `--weather-only` is used. |
-| `has_*` | Binary object-presence labels derived from mask train ids. |
+| `has_*` | Binary object-presence labels derived from mask train ids `1..18`; `has_road` is not generated. |
 
 The full dual-head target is:
 
@@ -66,12 +66,16 @@ The full dual-head target is:
 
 ## One-step ZIP Preparation
 
-After downloading ACDC, place these archives in the project root:
+Download ACDC from the official page: https://acdc.vision.ee.ethz.ch/download
+
+The project needs these two archives:
 
 ```text
 gt_trainval.zip
 rgb_anon_trainvaltest.zip
 ```
+
+Place both ZIP files in the project root, next to `README.md`.
 
 Prepare the project data layout and metadata CSV files with:
 
@@ -94,6 +98,8 @@ For a quick notebook/debug metadata sample:
 
 ```bash
 uv run python -m src.prepare_acdc \
+  --gt-zip gt_trainval.zip \
+  --rgb-zip rgb_anon_trainvaltest.zip \
   --quick-limit-per-split 32 \
   --metadata-dir metadata_quick
 ```

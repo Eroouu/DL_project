@@ -15,7 +15,7 @@ class MambaVisionDualHead(nn.Module):
         self,
         model_name: str = "mamba_t",
         num_weather_classes: int = 4,
-        num_object_classes: int = 19,
+        num_object_classes: int = 18,
         hidden_dim: int = 256,
         dropout: float = 0.1,
         freeze_backbone: bool = True,
@@ -120,7 +120,7 @@ class MambaVisionDualHead(nn.Module):
 def create_dual_head_model(
     model_name: str = "mamba_t",
     num_weather_classes: int = 4,
-    num_object_classes: int = 19,
+    num_object_classes: int = 18,
     hidden_dim: int = 256,
     dropout: float = 0.1,
     freeze_backbone: bool = True,

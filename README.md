@@ -47,12 +47,16 @@ src/
 
 ## Data Preparation
 
-Put the downloaded ACDC archives into the project root:
+Download ACDC from the official page: https://acdc.vision.ee.ethz.ch/download
+
+You need these two archives:
 
 ```text
 gt_trainval.zip
 rgb_anon_trainvaltest.zip
 ```
+
+Put both ZIP files into the project root, next to `README.md`.
 
 Then prepare the project dataset layout and metadata in one step:
 
@@ -80,6 +84,8 @@ For quick notebook smoke runs:
 
 ```bash
 uv run python -m src.prepare_acdc \
+  --gt-zip gt_trainval.zip \
+  --rgb-zip rgb_anon_trainvaltest.zip \
   --quick-limit-per-split 32 \
   --metadata-dir metadata_quick
 ```
@@ -94,7 +100,7 @@ uv run python -m src.dataset_builder \
   --prefix metadata
 ```
 
-The CSV contract is fixed in `reports/data.md`. Core columns are `image_path`, `weather_label`, `weather_id`, `official_split`, `split`, `sequence`, `frame`, `mask_path`, and object columns such as `has_road`, `has_car`, `has_bicycle`.
+The CSV contract is fixed in `reports/data.md`. Core columns are `image_path`, `weather_label`, `weather_id`, `official_split`, `split`, `sequence`, `frame`, `mask_path`, and object columns such as `has_sidewalk`, `has_car`, `has_bicycle`. The ACDC `road` trainId is intentionally excluded because it is present in almost every image and is not useful as an image-level object-presence target.
 
 ## Train
 
@@ -103,6 +109,9 @@ Smoke run after metadata is created:
 ```bash
 python scripts/train.py --config configs/mamba_t_smoke.yaml
 ```
+
+MambaVision uses Hugging Face remote code and requires `einops`, `timm`, and `mamba-ssm`.
+On Windows, `mamba-ssm` can be difficult to install; Kaggle/Linux is the recommended environment for the real MambaVision training run.
 
 First longer run:
 
@@ -185,7 +194,7 @@ object_prob: N x C
 ## Implemented Scope
 
 - `src.prepare_acdc` extracts the ACDC ZIP files into the project layout and builds metadata.
-- `configs/classmap.json` fixes weather ids and object `has_*` columns.
+- `configs/classmap.json` fixes weather ids and object `has_*` columns, excluding `road`.
 - `ACDCWeatherDataset`, `ACDCObjectPresenceDataset`, and `ACDCDualHeadDataset` read ready CSV metadata.
 - `MambaVisionDualHead` loads a shared MambaVision backbone and exposes `freeze_backbone()` / `unfreeze_backbone()`.
 - `train.py` supports config + CLI overrides, logs epoch losses to stdout, and saves epoch checkpoints.

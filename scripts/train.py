@@ -84,9 +84,30 @@ def resolve_config(args: argparse.Namespace) -> dict:
 
 def resolve_csv_paths(config: dict) -> tuple[Path, Path]:
     metadata_dir = Path(config["metadata_dir"])
-    train_csv = Path(config["train_csv"]) if config.get("train_csv") else metadata_dir / "head2_presence_train.csv"
-    val_csv = Path(config["val_csv"]) if config.get("val_csv") else metadata_dir / "head2_presence_val.csv"
+    if config.get("train_csv"):
+        train_csv = Path(config["train_csv"])
+    else:
+        train_csv = first_existing_path(
+            metadata_dir / "metadata_train.csv",
+            metadata_dir / "head2_presence_train.csv",
+        )
+
+    if config.get("val_csv"):
+        val_csv = Path(config["val_csv"])
+    else:
+        val_csv = first_existing_path(
+            metadata_dir / "metadata_val.csv",
+            metadata_dir / "head2_presence_val.csv",
+        )
+
     return train_csv, val_csv
+
+
+def first_existing_path(*paths: Path) -> Path:
+    for path in paths:
+        if path.exists():
+            return path
+    return paths[0]
 
 
 def limit_dataset(dataset, limit: int | None):

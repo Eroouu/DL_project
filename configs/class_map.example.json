@@ -2,7 +2,6 @@
   "note": "Backward-compatible example. The canonical file is configs/classmap.json.",
   "weather_classes": ["fog", "night", "rain", "snow"],
   "object_classes": [
-    "road",
     "sidewalk",
     "building",
     "wall",
@@ -23,7 +22,6 @@
     "bicycle"
   ],
   "object_columns": [
-    "has_road",
     "has_sidewalk",
     "has_building",
     "has_wall",
