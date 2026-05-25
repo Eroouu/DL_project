@@ -125,6 +125,12 @@ MambaVision-S architecture/config check:
 python scripts/train.py --config configs/mamba_s_smoke.yaml
 ```
 
+ResNet-50 baseline smoke run:
+
+```bash
+python scripts/train.py --config configs/resnet50_smoke.yaml
+```
+
 Direct CLI overrides:
 
 ```bash
@@ -191,6 +197,36 @@ weather_prob: N x 4
 object_prob: N x C
 ```
 
+Export predictions from a saved checkpoint:
+
+```bash
+python scripts/predict.py \
+  --checkpoint checkpoints/resnet50_epoch01.pt \
+  --metadata-dir metadata \
+  --out artifacts/predictions/resnet50_val.npz
+```
+
+Evaluate the ResNet-50 baseline:
+
+```bash
+uv run python src/eval.py \
+  --metadata metadata/metadata_val.csv \
+  --predictions artifacts/predictions/resnet50_val.npz \
+  --class-map configs/classmap.json \
+  --tune-thresholds \
+  --out reports/metrics/resnet50_val.json
+```
+
+Compare models after several metric JSON files exist:
+
+```bash
+python scripts/compare_metrics.py \
+  --metrics reports/metrics/mamba_t_val.json reports/metrics/resnet50_val.json \
+  --names mamba_t resnet50 \
+  --out-csv reports/metrics/model_comparison.csv \
+  --out-md reports/metrics/model_comparison.md
+```
+
 ## Implemented Scope
 
 - `src.prepare_acdc` extracts the ACDC ZIP files into the project layout and builds metadata.
@@ -199,3 +235,5 @@ object_prob: N x C
 - `MambaVisionDualHead` loads a shared MambaVision backbone and exposes `freeze_backbone()` / `unfreeze_backbone()`.
 - `train.py` supports config + CLI overrides, logs epoch losses to stdout, and saves epoch checkpoints.
 - `eval.py` computes weather/object metrics and writes JSON, Markdown, and CSV tables.
+- `scripts/predict.py` exports checkpoint predictions in the `.npz` format consumed by `eval.py`.
+- `scripts/compare_metrics.py` builds model comparison tables from saved metric JSON files.

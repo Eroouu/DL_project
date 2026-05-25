@@ -1,0 +1,17 @@
+metadata_dir: metadata
+model_name: resnet50
+batch_size: 16
+lr: 0.001
+weight_decay: 0.0001
+epochs: 5
+image_size: 224
+num_workers: 2
+output_dir: checkpoints
+hidden_dim: 256
+dropout: 0.1
+freeze_backbone: true
+pretrained_backbone: true
+weather_loss_weight: 1.0
+object_loss_weight: 1.0
+device: auto
+seed: 42

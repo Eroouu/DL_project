@@ -14,7 +14,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.data.datasets import ACDCDualHeadDataset, WEATHER_TO_ID, build_transforms, infer_object_label_columns
-from src.models.mamba_dual_head import create_dual_head_model
+from src.models import MODEL_CHOICES, create_dual_head_model
 from src.utils.checkpoint import save_checkpoint
 from src.utils.config import apply_overrides, load_yaml_config
 
@@ -25,7 +25,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--metadata-dir", type=Path, default=None)
     parser.add_argument("--train-csv", type=Path, default=None)
     parser.add_argument("--val-csv", type=Path, default=None)
-    parser.add_argument("--model", dest="model_name", choices=["mamba_t", "mamba_s"], default=None)
+    parser.add_argument("--model", dest="model_name", choices=MODEL_CHOICES, default=None)
     parser.add_argument("--batch-size", type=int, default=None)
     parser.add_argument("--lr", type=float, default=None)
     parser.add_argument("--epochs", type=int, default=None)
@@ -38,6 +38,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device", choices=["auto", "cpu", "cuda"], default=None)
     parser.add_argument("--freeze-backbone", dest="freeze_backbone", action="store_true", default=None)
     parser.add_argument("--unfreeze-backbone", dest="freeze_backbone", action="store_false")
+    parser.add_argument("--pretrained-backbone", dest="pretrained_backbone", action="store_true", default=None)
+    parser.add_argument("--random-backbone", dest="pretrained_backbone", action="store_false")
     return parser.parse_args()
 
 
@@ -59,6 +61,7 @@ def resolve_config(args: argparse.Namespace) -> dict:
         "limit_val": args.limit_val,
         "device": args.device,
         "freeze_backbone": args.freeze_backbone,
+        "pretrained_backbone": args.pretrained_backbone,
     }
     config = apply_overrides(config, overrides)
 
@@ -75,6 +78,7 @@ def resolve_config(args: argparse.Namespace) -> dict:
     config.setdefault("hidden_dim", 256)
     config.setdefault("dropout", 0.1)
     config.setdefault("freeze_backbone", True)
+    config.setdefault("pretrained_backbone", True)
     config.setdefault("weather_loss_weight", 1.0)
     config.setdefault("object_loss_weight", 1.0)
     config.setdefault("device", "auto")
@@ -218,6 +222,7 @@ def main() -> None:
         hidden_dim=int(config["hidden_dim"]),
         dropout=float(config["dropout"]),
         freeze_backbone=bool(config["freeze_backbone"]),
+        pretrained_backbone=bool(config["pretrained_backbone"]),
     ).to(device)
 
     optimizer = torch.optim.AdamW(
