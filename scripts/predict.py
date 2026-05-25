@@ -35,7 +35,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    checkpoint = torch.load(args.checkpoint, map_location="cpu")
+    checkpoint = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
     config = checkpoint.get("config", {})
     label_columns = checkpoint.get("label_columns")
 
