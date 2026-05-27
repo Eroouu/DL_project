@@ -16,12 +16,6 @@ With `uv`:
 uv sync
 ```
 
-On Egor's local machine, the existing Conda environment can also install the training requirements:
-
-```powershell
-C:\Users\egor0\anaconda3\envs\diplom314\python.exe -m pip install -r requirements.txt
-```
-
 ## Project Structure
 
 ```text
